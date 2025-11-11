@@ -3,8 +3,8 @@
 // ===============================
 
 // Импорт базовых модулей
-import { params } from './params.js';
-import { startCoin } from './coin.js';
+import { params } from '.scripts/params.js';
+import { startCoin } from '.scripts/coin.js';
 // (позже добавим)
 // import { startCoin } from './coin.js';
 // import { initEffects } from './coineffect.js';
