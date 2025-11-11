@@ -1,50 +1,55 @@
-// ===============================
-// Nosleep Coin Module
-// ===============================
-
 export function startCoin(container) {
-
-  // === Создаём HTML монетки ===
+  // === Контейнер монеты ===
   const coinWrap = document.createElement('div');
   coinWrap.id = 'coin-wrap';
-  coinWrap.style.position = 'relative';
-  coinWrap.style.width = '170px';
-  coinWrap.style.height = '170px';
-  coinWrap.style.cursor = 'pointer';
-  coinWrap.style.userSelect = 'none';
-  coinWrap.style.WebkitUserSelect = 'none';
-  coinWrap.style.willChange = 'transform';
-  coinWrap.style.transform = 'translateZ(0)';
+  Object.assign(coinWrap.style, {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%) translateZ(0)',
+    width: '170px',
+    height: '170px',
+    cursor: 'pointer',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    willChange: 'transform',
+  });
   container.appendChild(coinWrap);
 
+  // === Слои монеты ===
   const obvEl = document.createElement('img');
   obvEl.id = 'coinObverse';
-  obvEl.src = './assets/coin_obverse.png';
-  obvEl.style.position = 'absolute';
-  obvEl.style.inset = '0';
-  obvEl.style.width = '100%';
-  obvEl.style.height = '100%';
-  obvEl.style.objectFit = 'contain';
-  obvEl.style.opacity = '1';
-  obvEl.style.willChange = 'transform,opacity';
-  obvEl.style.backfaceVisibility = 'hidden';
+  obvEl.src = 'coin_obverse.png';
+  styleLayer(obvEl, 1);
   coinWrap.appendChild(obvEl);
 
   const revEl = document.createElement('img');
   revEl.id = 'coinReverse';
-  revEl.src = './assets/coin_reverse.png';
-  Object.assign(revEl.style, obvEl.style);
-  revEl.style.opacity = '0';
+  revEl.src = 'coin_reverse.png';
+  styleLayer(revEl, 0);
   coinWrap.appendChild(revEl);
 
   const edgeEl = document.createElement('img');
   edgeEl.id = 'coinEdge';
-  edgeEl.src = './assets/coin_edge.png';
-  Object.assign(edgeEl.style, obvEl.style);
-  edgeEl.style.opacity = '0';
+  edgeEl.src = 'coin_edge.png';
+  styleLayer(edgeEl, 0);
   edgeEl.style.transition = 'opacity 0.08s linear';
   edgeEl.style.transformOrigin = 'center';
   coinWrap.appendChild(edgeEl);
+
+  function styleLayer(el, opacity) {
+    Object.assign(el.style, {
+      position: 'absolute',
+      inset: '0',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      opacity: opacity,
+      willChange: 'transform,opacity',
+      backfaceVisibility: 'hidden',
+      transformStyle: 'preserve-3d'
+    });
+  }
 
   // === Настройки ===
   const params = {
@@ -62,25 +67,16 @@ export function startCoin(container) {
     headsChance: 0.5
   };
 
+  // === Состояние ===
   const radSpeed = Math.PI / 180;
   const twoPI = Math.PI * 2;
   const fpsLimit = 60;
   const frameDuration = 1000 / fpsLimit;
 
-  let angle = 0,
-      lastTime = performance.now(),
-      lastFrame = 0,
-      spinSpeed = params.baseSpeed;
-  let activeAnim = null,
-      currentSideHeads = true;
+  let angle = 0, lastTime = performance.now(), lastFrame = 0, spinSpeed = params.baseSpeed;
+  let activeAnim = null, currentSideHeads = true;
 
-  function applyCoinSize(size) {
-    coinWrap.style.width = size + 'px';
-    coinWrap.style.height = size + 'px';
-  }
-  applyCoinSize(params.coinSize);
-
-  // === Основной цикл ===
+  // === Анимационный цикл ===
   function loop(now) {
     requestAnimationFrame(loop);
     if (now - lastFrame < frameDuration) return;
@@ -99,8 +95,13 @@ export function startCoin(container) {
       revEl.style.opacity = 0;
     } else {
       edgeEl.style.opacity = 0;
-      if (c >= 0) { obvEl.style.opacity = 1; revEl.style.opacity = 0; }
-      else { obvEl.style.opacity = 0; revEl.style.opacity = 1; }
+      if (c >= 0) {
+        obvEl.style.opacity = 1;
+        revEl.style.opacity = 0;
+      } else {
+        obvEl.style.opacity = 0;
+        revEl.style.opacity = 1;
+      }
     }
 
     obvEl.style.transform = `scaleX(${scaleX})`;
@@ -115,10 +116,12 @@ export function startCoin(container) {
     startSpinSequence();
   });
 
+  // === Физика ===
   async function startSpinSequence() {
     const token = { cancelled: false };
     activeAnim = token;
-    coinWrap.style.transform = 'translateY(0)';
+    coinWrap.style.transition = 'transform 0s';
+    coinWrap.style.transform = 'translate(-50%, -50%) translateZ(0)';
     spinSpeed = params.baseSpeed;
 
     const accel = animateOver(params.accelDuration, t => {
@@ -127,21 +130,21 @@ export function startCoin(container) {
 
     const jumpUp = animateOver(params.jumpDuration / 2, t => {
       const y = -params.jumpHeight * Math.sin(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
+      coinWrap.style.transform = `translate(-50%, calc(-50% + ${y}px))`;
     }, token);
 
     await Promise.all([accel, jumpUp]);
 
     await animateOver(params.jumpDuration / 2, t => {
       const y = -params.jumpHeight * Math.cos(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
+      coinWrap.style.transform = `translate(-50%, calc(-50% + ${y}px))`;
     }, token);
 
     await animateOver(0.2, t => {
       const e = Math.sin(t * Math.PI);
-      coinWrap.style.transform = `translateY(${e * params.landingDepth}px)`;
+      coinWrap.style.transform = `translate(-50%, calc(-50% + ${e * params.landingDepth}px))`;
     }, token);
-    coinWrap.style.transform = 'translateY(0)';
+    coinWrap.style.transform = 'translate(-50%, -50%)';
 
     await wait(params.spinDuration, token);
     await animateOver(params.slowDuration, t => {
@@ -185,7 +188,6 @@ export function startCoin(container) {
       requestAnimationFrame(frame);
     });
   }
-
   function wait(sec, token) {
     return new Promise(resolve => {
       const end = performance.now() + sec * 1000;
@@ -197,7 +199,6 @@ export function startCoin(container) {
       requestAnimationFrame(check);
     });
   }
-
   function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
   function easeOutQuad(x) { return 1 - (1 - x) * (1 - x); }
   function lerp(a, b, t) { return a + (b - a) * t; }
