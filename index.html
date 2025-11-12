@@ -4,21 +4,16 @@
   <meta charset="UTF-8" />
   <title>Dain_Coin — beta</title>
 
-  <!-- Viewport: мобильная адаптация, без зума, без скейла -->
   <meta name="viewport"
         content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark light" />
   <meta name="format-detection" content="telephone=no" />
-
-  <!-- iOS PWA флаги (полезно и для Telegram WebView) -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <!-- Базовые стили: фон, контейнер игры, запреты лишнего -->
   <style>
     :root {
-      /* фикс iOS-100vh через кастомную переменную */
       --vh: 1vh;
       --safe-top: env(safe-area-inset-top);
       --safe-bottom: env(safe-area-inset-bottom);
@@ -26,7 +21,6 @@
       --safe-right: env(safe-area-inset-right);
     }
 
-    /* Сбросы и производительность */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0;
@@ -34,14 +28,14 @@
       width: 100%;
       height: 100%;
       background: #000;
-      overflow: hidden; /* без прокрутки */
-      touch-action: manipulation; /* быстрее тап-обработчики */
+      overflow: hidden;
+      touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
       image-rendering: auto;
     }
 
-    /* Статичный фон: cover + центрирование */
+    /* ✅ исправленный путь к фону */
     body::before {
       content: "";
       position: fixed;
@@ -49,10 +43,9 @@
       background: #000 url("./assets/background.png") center center / cover no-repeat;
       z-index: -1;
       will-change: transform;
-      transform: translateZ(0); /* GPU hint */
+      transform: translateZ(0);
     }
 
-    /* Корневой контейнер игры */
     #game-root {
       position: fixed;
       left: 0; right: 0;
@@ -69,7 +62,6 @@
       overflow: hidden;
     }
 
-    /* Блокировка альбомной ориентации: перекрывающая плашка */
     #orientation-lock {
       position: fixed;
       inset: 0;
@@ -106,7 +98,6 @@
       #orientation-lock { display: flex; }
     }
 
-    /* Прелоадер на старте (пока main.js собирает сцену) */
     #boot {
       position: absolute;
       bottom: 16px;
@@ -124,7 +115,7 @@
     }
   </style>
 
-  <!-- Прелоад картинок (ускоряем первое появление монеты) -->
+  <!-- ✅ Исправленные относительные прелоады -->
   <link rel="preload" as="image" href="./assets/coin_avers.png" />
   <link rel="preload" as="image" href="./assets/coin_revers.png" />
   <link rel="preload" as="image" href="./assets/coin_edge.png" />
@@ -132,12 +123,10 @@
 </head>
 
 <body>
-  <!-- Корневой контейнер для сцены -->
   <div id="game-root">
     <div id="boot">Загрузка…</div>
   </div>
 
-  <!-- Плашка “только портрет” (мы её “включаем” CSS-медиа-правилом выше) -->
   <div id="orientation-lock" aria-hidden="true">
     <div class="card">
       <h1>Поверните устройство</h1>
@@ -145,7 +134,6 @@
     </div>
   </div>
 
-  <!-- Вспомогательный стартовый скрипт: фикс 100vh на iOS и Telegram WebView -->
   <script>
     (function fastBoot() {
       const setVh = () => {
@@ -156,16 +144,14 @@
       window.addEventListener('resize', setVh);
       window.addEventListener('orientationchange', setVh);
 
-      // Предзагрузка изображений (дополнительно к <link rel="preload">)
       const imgs = [
-        './assets/coin_avers.png',
-        './assets/coin_revers.png',
-        './assets/coin_edge.png',
-        './assets/background.png'
+        "./assets/coin_avers.png",
+        "./assets/coin_revers.png",
+        "./assets/coin_edge.png",
+        "./assets/background.png"
       ];
       imgs.forEach(src => { const i = new Image(); i.decoding = 'async'; i.src = src; });
 
-      // Предупреждения/предотвращения зума двойным тапом
       let lastTouch = 0;
       document.addEventListener('touchend', (e) => {
         const now = window.performance.now();
@@ -175,7 +161,6 @@
     })();
   </script>
 
-  <!-- Главная точка входа: собирает сцену и подключает модули -->
   <script type="module" src="./main.js" defer></script>
 </body>
 </html>
