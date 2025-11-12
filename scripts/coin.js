@@ -2,32 +2,44 @@
 // coin.js — модуль монетки
 // ===============================
 
+// Параметры монетки
 export const coinParams = {
-  size: 30,
-  imageSrc: './assets/coin_avers.png',
+  size: 120, // размер монетки в пикселях (можно менять)
+  imageSrc: './assets/coin_avers.png', // путь к изображению монеты
 };
 
-// 👇 Этот объект будет прочитан Inspector.js
-export const inspectorSchema = {
+// ✅ Универсальный ключ для Inspector.js
+// Этот объект сообщает инспектору, какие параметры нужно отображать
+export const coinInspector = {
   moduleName: 'Монетка',
-  params: [
-    {
-      key: 'size',
+  params: {
+    size: {
       label: 'Размер монетки',
-      type: 'slider',
-      min: 10,
-      max: 80,
+      min: 50,
+      max: 300,
       step: 1,
+      type: 'range',
+      get: () => coinParams.size,
+      set: (v) => {
+        coinParams.size = v;
+        const coin = document.getElementById('coin');
+        if (coin) {
+          coin.style.width = `${v}px`;
+          coin.style.height = `${v}px`;
+        }
+      },
     },
-  ],
+  },
 };
 
-// ====== ФУНКЦИИ ======
+// Функция создания и отображения монетки
 export function startCoin() {
   const coin = document.createElement('img');
   coin.src = coinParams.imageSrc;
   coin.id = 'coin';
   coin.style.position = 'absolute';
+  coin.style.width = `${coinParams.size}px`;
+  coin.style.height = `${coinParams.size}px`;
   coin.style.left = '50%';
   coin.style.top = '50%';
   coin.style.transform = 'translate(-50%, -50%)';
@@ -35,17 +47,6 @@ export function startCoin() {
   coin.style.pointerEvents = 'auto';
   coin.style.cursor = 'pointer';
 
-  // применяем размер
-  updateCoinSize();
-
   document.body.appendChild(coin);
   return coin;
-}
-
-export function updateCoinSize() {
-  const coin = document.getElementById('coin');
-  if (coin) {
-    coin.style.width = `${coinParams.size}px`;
-    coin.style.height = `${coinParams.size}px`;
-  }
 }
