@@ -3,7 +3,7 @@
 // ===============================
 
 // Импорт базовых модулей
-import { params } from '.scripts/params.js';
+//import { params } from '.scripts/params.js';
 import { startCoin } from '.scripts/coin.js';
 // (позже добавим)
 // import { startCoin } from './coin.js';
@@ -34,7 +34,7 @@ loadingText.style.marginBottom = '8vh';
 gameContainer.appendChild(loadingText);
 
 // ========== ПОДКЛЮЧЕНИЕ МОДУЛЕЙ ==========
-startCoin(gameContainer);
+startCoin();
 // initEffects(gameContainer);
 
 // ========== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ==========
