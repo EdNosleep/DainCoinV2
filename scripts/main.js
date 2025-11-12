@@ -4,7 +4,7 @@
 
 // Импорт базовых модулей
 //import { initInspector } from './scripts/inspector.js';
-//import { startCoin } from './scripts/coin.js';
+import { startCoin } from './scripts/coin.js';
 // (позже добавим)
 // import { startCoin } from './coin.js';
 // import { initEffects } from './coineffect.js';
@@ -34,7 +34,7 @@ loadingText.style.marginBottom = '8vh';
 gameContainer.appendChild(loadingText);
 
 // ========== ПОДКЛЮЧЕНИЕ МОДУЛЕЙ ==========
-//startCoin();
+startCoin();
 //initInspector();
 // initEffects(gameContainer);
 
