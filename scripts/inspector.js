@@ -1,90 +1,120 @@
 // ===============================
-// Inspector.js — универсальный визуальный инспектор
+// Inspector.js — визуальный инспектор
 // ===============================
 
-export function initInspector(modules = []) {
-  // === Создаём кнопку открытия ===
-  const btn = document.createElement('button');
-  btn.innerText = '⚙️ Настройки';
-  btn.style.position = 'fixed';
-  btn.style.bottom = '10px';
-  btn.style.right = '10px';
-  btn.style.zIndex = '1000';
-  btn.style.padding = '10px 14px';
-  btn.style.border = 'none';
-  btn.style.borderRadius = '12px';
-  btn.style.background = 'rgba(0,0,0,0.7)';
-  btn.style.color = '#fff';
-  btn.style.cursor = 'pointer';
-  btn.style.fontSize = '16px';
-  document.body.appendChild(btn);
+// Модули, с которыми он работает (дописываешь сам)
+import * as coinModule from './coin.js';
 
-  // === Создаём саму панель ===
+// Список подключённых модулей
+const modules = [coinModule];
+
+// === СТИЛИ ПАНЕЛИ ===
+const panelStyle = `
+#inspector-toggle {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: #222;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 9999;
+}
+#inspector-panel {
+  position: fixed;
+  bottom: -300px;
+  left: 0;
+  width: 100%;
+  background: rgba(30,30,30,0.95);
+  color: white;
+  border-top: 2px solid #555;
+  border-radius: 16px 16px 0 0;
+  transition: bottom 0.3s ease;
+  padding: 20px;
+  z-index: 9998;
+  font-family: sans-serif;
+}
+#inspector-panel.open {
+  bottom: 0;
+}
+.inspector-module {
+  margin-bottom: 16px;
+}
+.inspector-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.inspector-slider {
+  width: 100%;
+}
+`;
+
+// Добавляем стили
+const styleTag = document.createElement('style');
+styleTag.textContent = panelStyle;
+document.head.appendChild(styleTag);
+
+// === СОЗДАНИЕ ИНСПЕКТОРА ===
+export function initInspector() {
+  // Кнопка
+  const toggle = document.createElement('button');
+  toggle.id = 'inspector-toggle';
+  toggle.textContent = 'Инспектор ⚙️';
+  document.body.appendChild(toggle);
+
+  // Панель
   const panel = document.createElement('div');
   panel.id = 'inspector-panel';
-  panel.style.position = 'fixed';
-  panel.style.left = '0';
-  panel.style.bottom = '-400px';
-  panel.style.width = '100%';
-  panel.style.height = '400px';
-  panel.style.background = 'rgba(20, 20, 20, 0.95)';
-  panel.style.backdropFilter = 'blur(8px)';
-  panel.style.transition = 'bottom 0.4s ease';
-  panel.style.color = 'white';
-  panel.style.padding = '20px';
-  panel.style.boxSizing = 'border-box';
-  panel.style.zIndex = '999';
-  panel.style.overflowY = 'auto';
   document.body.appendChild(panel);
 
-  let isOpen = false;
-  btn.onclick = () => {
-    isOpen = !isOpen;
-    panel.style.bottom = isOpen ? '0' : '-400px';
-  };
+  toggle.onclick = () => panel.classList.toggle('open');
 
-  // === Генерация контролов ===
-  modules.forEach((m) => {
-    const header = document.createElement('h3');
-    header.innerText = m.inspectorConfig.moduleName;
-    header.style.marginTop = '10px';
-    header.style.fontSize = '18px';
-    header.style.color = '#ffcc66';
-    panel.appendChild(header);
+  // Создаём элементы под каждый модуль
+  for (const mod of modules) {
+    if (!mod.inspectorSchema) continue;
 
-    m.inspectorConfig.params.forEach((p) => {
-      const container = document.createElement('div');
-      container.style.margin = '10px 0';
+    const moduleDiv = document.createElement('div');
+    moduleDiv.className = 'inspector-module';
 
-      const label = document.createElement('label');
-      label.innerText = `${p.label}: `;
-      label.style.display = 'block';
-      label.style.marginBottom = '4px';
-      container.appendChild(label);
+    const title = document.createElement('h3');
+    title.textContent = mod.inspectorSchema.moduleName;
+    moduleDiv.appendChild(title);
 
-      if (p.type === 'range') {
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.min = p.min;
-        slider.max = p.max;
-        slider.step = p.step;
-        slider.value = p.get();
+    for (const p of mod.inspectorSchema.params) {
+      const wrap = document.createElement('div');
+      wrap.className = 'inspector-param';
 
-        const valLabel = document.createElement('span');
-        valLabel.innerText = p.get();
-        valLabel.style.marginLeft = '10px';
+      const label = document.createElement('div');
+      label.className = 'inspector-label';
+      label.innerHTML = `<span>${p.label}</span><span id="val-${p.key}">${mod.coinParams?.[p.key]}</span>`;
+      wrap.appendChild(label);
 
-        slider.oninput = (e) => {
-          const val = parseFloat(e.target.value);
-          valLabel.innerText = val;
-          p.set(val);
-        };
+      if (p.type === 'slider') {
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = p.min;
+        input.max = p.max;
+        input.step = p.step || 1;
+        input.value = mod.coinParams?.[p.key];
+        input.className = 'inspector-slider';
+        wrap.appendChild(input);
 
-        container.appendChild(slider);
-        container.appendChild(valLabel);
+        input.addEventListener('input', () => {
+          mod.coinParams[p.key] = parseFloat(input.value);
+          document.getElementById(`val-${p.key}`).textContent = input.value;
+
+          // Автообновление, если в модуле есть функция updateCoinSize()
+          if (mod.updateCoinSize) mod.updateCoinSize();
+        });
       }
 
-      panel.appendChild(container);
-    });
-  });
+      moduleDiv.appendChild(wrap);
+    }
+
+    panel.appendChild(moduleDiv);
+  }
 }
