@@ -3,7 +3,7 @@
 // ===============================
 
 // === ИМПОРТЫ ===
-import { startCoin } from './scripts/coin.js';
+// import { startCoin } from './scripts/coin.js';
 // import { initEffects } from './scripts/coineffect.js';
 // import { params } from './scripts/params.js'; // (если будет использоваться)
 
@@ -32,7 +32,7 @@ loadingText.style.marginBottom = '8vh';
 gameContainer.appendChild(loadingText);
 
 // === ПОДКЛЮЧЕНИЕ МОДУЛЕЙ ===
-startCoin();
+// startCoin();
 
 // === АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ===
 function resizeGame() {
