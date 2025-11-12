@@ -7,9 +7,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000">
-  <title>Nosleep Coin Game</title>
 
-  <!-- Favicon / иконка -->
+  <!-- 🔒 Фиксируем только портретную ориентацию -->
+  <meta name="screen-orientation" content="portrait">
+  <meta name="x5-orientation" content="portrait">
+  <meta name="apple-mobile-web-app-orientations" content="portrait">
+  <meta name="x5-fullscreen" content="true">
+  <meta name="full-screen" content="yes">
+
+  <title>Nosleep Coin Game</title>
   <link rel="icon" type="image/png" href="./assets/icon.png" />
 
   <style>
@@ -28,9 +34,9 @@
       user-select: none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
     }
 
-    /* Главная сцена — вся игра живёт здесь */
     #game-root {
       position: relative;
       width: 100%;
@@ -42,27 +48,8 @@
       align-items: center;
     }
 
-    /* Telegram WebApp-friendly layout */
-    html, body {
-      overscroll-behavior: none;
-    }
-
-    /* Сообщение, если телефон в горизонтальном положении */
-    @media (orientation: landscape) {
-      body::before {
-        content: "Поверни устройство в портретный режим 📱";
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.85);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        text-align: center;
-        padding: 20px;
-      }
-    }
+    /* 🧩 Убираем предупреждение о горизонтальном режиме полностью */
+    /* Никаких сообщений больше не выводится */
 
     /* Небольшие визуальные улучшения для айфонов */
     @supports (-webkit-touch-callout: none) {
@@ -76,21 +63,19 @@
 
   <!-- =========================================
        КОРНЕВОЙ КОНТЕЙНЕР ИГРЫ
-       (сюда динамически вставятся модули)
   ========================================== -->
   <div id="game-root"></div>
 
   <!-- =========================================
-       ЗАГРУЗКА ГЛАВНОГО МОДУЛЯ
-       (все остальные подключаются внутри main.js)
+       ГЛАВНЫЙ МОДУЛЬ ИГРЫ
   ========================================== -->
   <script type="module" src="./scripts/main.js"></script>
 
-  <!-- ======================
-       АДАПТАЦИЯ ПОД TELEGRAM
-       ====================== -->
+  <!-- =========================================
+       АДАПТАЦИЯ ПОД TELEGRAM И ОГРАНИЧЕНИЕ ПОВОРОТА
+  ========================================== -->
   <script>
-    // Telegram WebApp адаптация (если игра запущена внутри бота)
+    // Telegram WebApp адаптация
     if (window.Telegram && Telegram.WebApp) {
       Telegram.WebApp.expand();
       Telegram.WebApp.disableVerticalSwipes();
@@ -101,6 +86,18 @@
     document.addEventListener('touchmove', (e) => {
       if (e.scale !== 1) e.preventDefault();
     }, { passive: false });
+
+    // 🔒 Программная фиксация ориентации
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(() => {});
+    }
+
+    // Для старых iOS / Telegram, где orientation.lock не работает
+    window.addEventListener('orientationchange', () => {
+      if (window.orientation !== 0) {
+        document.body.style.transform = 'rotate(0deg)';
+      }
+    });
   </script>
 
 </body>
