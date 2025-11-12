@@ -3,7 +3,7 @@
 // ===============================
 
 export const coinParams = {
-  size: 120,
+  size: 30,
   imageSrc: './assets/coin_avers.png',
 };
 
@@ -15,8 +15,8 @@ export const inspectorSchema = {
       key: 'size',
       label: 'Размер монетки',
       type: 'slider',
-      min: 50,
-      max: 300,
+      min: 10,
+      max: 80,
       step: 1,
     },
   ],
