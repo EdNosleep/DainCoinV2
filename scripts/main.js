@@ -43,10 +43,6 @@ function resizeGame() {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Сохраняем реальный размер в params (может пригодиться)
-  params.screenWidth = w;
-  params.screenHeight = h;
-
   // Автоматически масштабируем интерфейс, если нужно
   const scale = Math.min(w / 390, h / 844); // ориентир iPhone 12
   gameContainer.style.transform = `scale(${scale})`;
