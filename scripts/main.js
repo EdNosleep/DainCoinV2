@@ -4,7 +4,7 @@
 
 // Импорт базовых модулей
 //import { initInspector } from './inspector.js';
-import { startCoin, inspectorConfig } from './coin.js';
+iimport { startCoin } from './coin.js';
 // (позже добавим)
 // import { startCoin } from './coin.js';
 // import { initEffects } from './coineffect.js';
