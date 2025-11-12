@@ -2,106 +2,180 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <title>Dain_Coin — beta</title>
+
+  <!-- Viewport: мобильная адаптация, без зума, без скейла -->
   <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#000000">
-  <title>Nosleep Coin Game</title>
+        content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="format-detection" content="telephone=no" />
 
-  <!-- Favicon / иконка -->
-  <link rel="icon" type="image/png" href="./assets/icon.png" />
+  <!-- iOS PWA флаги (полезно и для Telegram WebView) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
+  <!-- Базовые стили: фон, контейнер игры, запреты лишнего -->
   <style>
-    /* ==============================
-       БАЗОВАЯ СЕТКА И ФОН
-    =============================== */
+    :root {
+      /* фикс iOS-100vh через кастомную переменную */
+      --vh: 1vh;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left: env(safe-area-inset-left);
+      --safe-right: env(safe-area-inset-right);
+    }
+
+    /* Сбросы и производительность */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;
-      background: url("./assets/background.png") center center / cover no-repeat fixed;
-      font-family: 'Roboto', 'Arial', sans-serif;
+      background: #000;
+      overflow: hidden; /* без прокрутки */
+      touch-action: manipulation; /* быстрее тап-обработчики */
       -webkit-user-select: none;
       user-select: none;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
+      image-rendering: auto;
     }
 
-    /* Главная сцена — вся игра живёт здесь */
+    /* Статичный фон: cover + центрирование */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: #000 url("./assets/background.png") center center / cover no-repeat;
+      z-index: -1;
+      will-change: transform;
+      transform: translateZ(0); /* GPU hint */
+    }
+
+    /* Корневой контейнер игры */
     #game-root {
-      position: relative;
+      position: fixed;
+      left: 0; right: 0;
+      top: 0; bottom: 0;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
       width: 100%;
-      height: 100%;
-      overflow: hidden;
+      height: calc(var(--vh) * 100);
       display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
       align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
 
-    /* Telegram WebApp-friendly layout */
-    html, body {
-      overscroll-behavior: none;
+    /* Блокировка альбомной ориентации: перекрывающая плашка */
+    #orientation-lock {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 9999;
     }
-
-    /* Сообщение, если телефон в горизонтальном положении */
+    #orientation-lock .card {
+      max-width: 420px;
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 20px 16px;
+      backdrop-filter: blur(6px);
+    }
+    #orientation-lock h1 {
+      font-size: 18px;
+      margin: 0 0 8px 0;
+    }
+    #orientation-lock p {
+      opacity: 0.8;
+      margin: 0;
+      line-height: 1.35;
+      font-size: 14px;
+    }
     @media (orientation: landscape) {
-      body::before {
-        content: "Поверни устройство в портретный режим 📱";
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.85);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        text-align: center;
-        padding: 20px;
-      }
+      #orientation-lock { display: flex; }
     }
 
-    /* Небольшие визуальные улучшения для айфонов */
-    @supports (-webkit-touch-callout: none) {
-      body {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
+    /* Прелоадер на старте (пока main.js собирает сцену) */
+    #boot {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.4);
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      pointer-events: none;
+      opacity: 0.9;
     }
   </style>
+
+  <!-- Прелоад картинок (ускоряем первое появление монеты) -->
+  <link rel="preload" as="image" href="./assets/coin_avers.png" />
+  <link rel="preload" as="image" href="./assets/coin_revers.png" />
+  <link rel="preload" as="image" href="./assets/coin_edge.png" />
+  <link rel="preload" as="image" href="./assets/background.png" />
 </head>
+
 <body>
+  <!-- Корневой контейнер для сцены -->
+  <div id="game-root">
+    <div id="boot">Загрузка…</div>
+  </div>
 
-  <!-- =========================================
-       КОРНЕВОЙ КОНТЕЙНЕР ИГРЫ
-       (сюда динамически вставятся модули)
-  ========================================== -->
-  <div id="game-root"></div>
+  <!-- Плашка “только портрет” (мы её “включаем” CSS-медиа-правилом выше) -->
+  <div id="orientation-lock" aria-hidden="true">
+    <div class="card">
+      <h1>Поверните устройство</h1>
+      <p>Игра работает только в портретной ориентации.</p>
+    </div>
+  </div>
 
-  <!-- =========================================
-       ЗАГРУЗКА ГЛАВНОГО МОДУЛЯ
-       (все остальные подключаются внутри main.js)
-  ========================================== -->
-  <script type="module" src="./scripts/main.js"></script>
-
-  <!-- ======================
-       АДАПТАЦИЯ ПОД TELEGRAM
-       ====================== -->
+  <!-- Вспомогательный стартовый скрипт: фикс 100vh на iOS и Telegram WebView -->
   <script>
-    // Telegram WebApp адаптация (если игра запущена внутри бота)
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.expand();
-      Telegram.WebApp.disableVerticalSwipes();
-      document.body.style.backgroundAttachment = "scroll";
-    }
+    (function fastBoot() {
+      const setVh = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+      setVh();
+      window.addEventListener('resize', setVh);
+      window.addEventListener('orientationchange', setVh);
 
-    // Блокировка случайных свайпов на iOS
-    document.addEventListener('touchmove', (e) => {
-      if (e.scale !== 1) e.preventDefault();
-    }, { passive: false });
+      // Предзагрузка изображений (дополнительно к <link rel="preload">)
+      const imgs = [
+        './assets/coin_avers.png',
+        './assets/coin_revers.png',
+        './assets/coin_edge.png',
+        './assets/background.png'
+      ];
+      imgs.forEach(src => { const i = new Image(); i.decoding = 'async'; i.src = src; });
+
+      // Предупреждения/предотвращения зума двойным тапом
+      let lastTouch = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = window.performance.now();
+        if (now - lastTouch <= 300) e.preventDefault();
+        lastTouch = now;
+      }, { passive: false });
+    })();
   </script>
 
+  <!-- Главная точка входа: собирает сцену и подключает модули -->
+  <script type="module" src="./main.js" defer></script>
 </body>
 </html>
