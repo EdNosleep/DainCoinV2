@@ -3,7 +3,7 @@
 // ===============================
 
 // Импорт базовых модулей
-import { initInspector } from './inspector.js';
+//import { initInspector } from './inspector.js';
 import { startCoin } from './coin.js';
 // (позже добавим)
 // import { startCoin } from './coin.js';
@@ -35,7 +35,7 @@ gameContainer.appendChild(loadingText);
 
 // ========== ПОДКЛЮЧЕНИЕ МОДУЛЕЙ ==========
 startCoin();
-initInspector();
+//initInspector();
 // initEffects(gameContainer);
 
 // ========== АДАПТАЦИЯ ПОД ТЕЛЕФОНЫ ==========
