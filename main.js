@@ -36,11 +36,11 @@ gameContainer.appendChild(loadingText);
 // Пример универсального подключения: добавляем активные модули в массив
 // Когда появятся реальные модули, просто раскомментируй строки
 
-// import { startCoin } from './coin.js';
+import { startCoin } from './coin.js';
 // import { startInspector } from './inspector.js';
 
-// const activeModules = [ startCoin, startInspector ];
-// activeModules.forEach(init => typeof init === 'function' && init(gameContainer));
+const activeModules = [ startCoin ];
+activeModules.forEach(init => typeof init === 'function' && init(gameContainer));
 
 // Для теста пока выведем сообщение в консоль
 console.log('Main.js запущен, контейнер инициализирован');
