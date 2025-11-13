@@ -4,8 +4,8 @@
 
 export const coinInspector = {
   'Размер монеты (px)':   { min: 80,  max: 300,  step: 1,    value: 170,   param: 'coinSize' },
-  'Скорость вращения':    { min: 30,  max: 200,  step: 1,    value: 75,    param: 'baseSpeed' },
-  'Высота прыжка':        { min: 20,  max: 200,  step: 1,    value: 60,    param: 'jumpHeight' },
+  'Скорость вращения':    { min: 30,  max: 300,  step: 1,    value: 75,    param: 'baseSpeed' },
+  'Высота прыжка':        { min: 20,  max: 300,  step: 1,    value: 60,    param: 'jumpHeight' },
   'Длительность броска':  { min: 0,   max: 3,    step: 0.1,  value: 1.2,   param: 'spinDuration' },
   'Скорость в полёте':    { min: 200, max: 2000, step: 10,   value: 1600,  param: 'boostSpeed' },
   'Шанс аверса (%)':      { min: 0,   max: 100,  step: 1,    value: 50,    param: 'headsChance' }
