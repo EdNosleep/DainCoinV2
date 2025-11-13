@@ -1,12 +1,12 @@
 // ===============================
-// Dain_Coin — COIN MODULE (v2 with Inspector support)
+// Dain_Coin — COIN MODULE (v3, realtime rotation speed)
 // ===============================
 
 export const coinInspector = {
   'Размер монеты (px)':   { min: 80,  max: 300,  step: 1,    value: 170,   param: 'coinSize' },
   'Скорость вращения':    { min: 30,  max: 200,  step: 1,    value: 75,    param: 'baseSpeed' },
   'Высота прыжка':        { min: 20,  max: 200,  step: 1,    value: 60,    param: 'jumpHeight' },
-  'Длительность броска':  { min: 0,   max: 3,    step: 0.1,  value: 0.2,   param: 'spinDuration' },
+  'Длительность броска':  { min: 0,   max: 3,    step: 0.1,  value: 1.2,   param: 'spinDuration' },
   'Скорость в полёте':    { min: 200, max: 2000, step: 10,   value: 1600,  param: 'boostSpeed' },
   'Шанс аверса (%)':      { min: 0,   max: 100,  step: 1,    value: 50,    param: 'headsChance' }
 };
@@ -92,8 +92,11 @@ export function startCoin(parentContainer) {
   const twoPI = Math.PI * 2;
   const fpsLimit = 60;
   const frameDuration = 1000 / fpsLimit;
-  let angle = 0, lastTime = performance.now(), lastFrame = 0, spinSpeed = params.baseSpeed;
+  let angle = 0, lastTime = performance.now(), lastFrame = 0;
+  let spinSpeed = params.baseSpeed;
   let activeAnim = null;
+
+  const isIdle = () => !activeAnim; // флаг покоя
 
   // === ОСНОВНОЙ ЦИКЛ ===
   function loop(now) {
@@ -103,11 +106,19 @@ export function startCoin(parentContainer) {
     lastTime = now;
     lastFrame = now;
 
+    // 🔄 Реакция на изменение скорости в реальном времени
+    if (isIdle()) {
+      const followSpeed = 8; // скорость подстройки
+      spinSpeed += (params.baseSpeed - spinSpeed) * Math.min(1, dt * followSpeed);
+    }
+
+    // Вращение
     angle = (angle + spinSpeed * radSpeed * dt) % twoPI;
     const c = Math.cos(angle);
     const absC = Math.abs(c);
     const scaleX = Math.max(absC, 0.04);
 
+    // Отображение слоёв
     if (absC < params.edgeWidth) {
       edgeEl.style.opacity = 1 - absC / params.edgeWidth;
       obvEl.style.opacity = 0;
@@ -130,6 +141,7 @@ export function startCoin(parentContainer) {
     startSpinSequence();
   });
 
+  // === АНИМАЦИЯ БРОСКА ===
   async function startSpinSequence() {
     const token = { cancelled: false };
     activeAnim = token;
@@ -181,6 +193,9 @@ export function startCoin(parentContainer) {
       spinSpeed = params.baseSpeed * t;
     }, token);
     spinSpeed = params.baseSpeed;
+
+    // 🔚 Сбрасываем флаг активности
+    activeAnim = null;
   }
 
   // === УТИЛИТЫ ===
@@ -225,8 +240,11 @@ export function startCoin(parentContainer) {
         coinWrap.style.width = value + 'px';
         coinWrap.style.height = value + 'px';
       }
+      if (key === 'baseSpeed' && !activeAnim) {
+        spinSpeed = value;
+      }
     }
   };
 
-  console.log('Coin module initialized (centered + inspector-ready)');
+  console.log('Coin module initialized (realtime speed update)');
 }
