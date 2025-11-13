@@ -37,9 +37,9 @@ gameContainer.appendChild(loadingText);
 // Когда появятся реальные модули, просто раскомментируй строки
 
 import { startCoin } from './coin.js';
-// import { startInspector } from './inspector.js';
+import { startInspector } from './inspector.js';
 
-const activeModules = [ startCoin ];
+const activeModules = [ startCoin, startInspector ];
 activeModules.forEach(init => typeof init === 'function' && init(gameContainer));
 
 // Для теста пока выведем сообщение в консоль
