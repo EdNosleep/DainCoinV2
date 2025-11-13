@@ -1,38 +1,45 @@
 // ===============================
-// Dain_Coin — UNIVERSAL INSPECTOR MODULE
+// Dain_Coin — UNIVERSAL INSPECTOR MODULE (v2 with autosave + reset)
 // ===============================
 
-import { coinInspector } from './coin.js'; // пример, потом можно добавлять новые
+import { coinInspector } from './coin.js';
 
-export function startInspector(parentContainer) {
+export function startInspector() {
+  const STORAGE_KEY = 'DainCoin_InspectorParams';
   const inspectorModules = [
     { name: 'Монетка', source: coinInspector, target: window.__coinModule }
   ];
 
-  // === СОЗДАЁМ КНОПКУ ⚙️ ===
-  const button = document.createElement('button');
-  button.innerText = '⚙️';
-  Object.assign(button.style, {
-    position: 'absolute',
-    right: '3vw',
-    bottom: '3vh',
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    border: 'none',
-    fontSize: '24px',
-    background: 'rgba(255,255,255,0.15)',
-    color: '#fff',
-    backdropFilter: 'blur(8px)',
-    cursor: 'pointer',
-    zIndex: 50,
-    transition: 'opacity 0.2s ease',
+  // === ВОССТАНОВЛЕНИЕ ПАРАМЕТРОВ ===
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  inspectorModules.forEach(mod => {
+    const source = mod.source;
+    for (const label in source) {
+      const p = source[label];
+      const savedVal = saved[p.param];
+      if (savedVal !== undefined) {
+        p.value = savedVal;
+        if (mod.target?.applyParam)
+          mod.target.applyParam(p.param, p.param === 'headsChance' ? savedVal / 100 : savedVal);
+      }
+    }
   });
-  button.addEventListener('touchstart', e => e.stopPropagation());
-  button.addEventListener('click', togglePanel);
-  parentContainer.appendChild(button);
 
-  // === СОЗДАЁМ ПАНЕЛЬ ===
+  // === ЗАТЕМНЕНИЕ ФОНА ===
+  const overlay = document.createElement('div');
+  Object.assign(overlay.style, {
+    position: 'fixed',
+    inset: '0',
+    background: 'rgba(0,0,0,0.0)',
+    backdropFilter: 'blur(0px)',
+    opacity: '0',
+    transition: 'opacity 0.35s ease, backdrop-filter 0.35s ease',
+    zIndex: 9997,
+    pointerEvents: 'none',
+  });
+  document.body.appendChild(overlay);
+
+  // === ПАНЕЛЬ ===
   const panel = document.createElement('div');
   panel.id = 'inspector-panel';
   Object.assign(panel.style, {
@@ -41,7 +48,7 @@ export function startInspector(parentContainer) {
     right: '0',
     bottom: '-60%',
     height: '60%',
-    background: 'rgba(20,20,20,0.9)',
+    background: 'rgba(20,20,20,0.92)',
     borderTop: '1px solid rgba(255,255,255,0.15)',
     borderRadius: '16px 16px 0 0',
     boxShadow: '0 -6px 16px rgba(0,0,0,0.5)',
@@ -51,17 +58,77 @@ export function startInspector(parentContainer) {
     padding: '16px',
     overflowY: 'auto',
     transition: 'bottom 0.35s ease',
-    zIndex: 999,
+    zIndex: 9998,
   });
   document.body.appendChild(panel);
 
+  // === КНОПКА ⚙️ ===
+  const button = document.createElement('button');
+  button.innerText = '⚙️';
+  Object.assign(button.style, {
+    position: 'fixed',
+    right: '3vw',
+    bottom: '3vh',
+    width: '52px',
+    height: '52px',
+    borderRadius: '50%',
+    border: 'none',
+    fontSize: '24px',
+    background: 'rgba(255,255,255,0.15)',
+    color: '#fff',
+    backdropFilter: 'blur(8px)',
+    cursor: 'pointer',
+    zIndex: 10000,
+    transition: 'transform 0.3s ease',
+  });
+  document.body.appendChild(button);
+
+  // === КНОПКА СБРОСА ===
+  const resetBtn = document.createElement('button');
+  resetBtn.innerText = 'Сбросить настройки';
+  Object.assign(resetBtn.style, {
+    width: '100%',
+    marginTop: '16px',
+    padding: '10px',
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,0.25)',
+    background: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  });
+  resetBtn.onmouseenter = () => (resetBtn.style.background = 'rgba(255,255,255,0.2)');
+  resetBtn.onmouseleave = () => (resetBtn.style.background = 'rgba(255,255,255,0.1)');
+  resetBtn.onclick = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  };
+
   let open = false;
+  button.addEventListener('click', togglePanel);
+  overlay.addEventListener('click', togglePanel);
+
   function togglePanel() {
     open = !open;
+
     panel.style.bottom = open ? '0' : '-60%';
+    button.style.transform = open ? 'rotate(45deg)' : 'rotate(0deg)';
+
+    if (open) {
+      overlay.style.pointerEvents = 'auto';
+      overlay.style.opacity = '1';
+      overlay.style.background = 'rgba(0,0,0,0.4)';
+      overlay.style.backdropFilter = 'blur(4px)';
+    } else {
+      overlay.style.pointerEvents = 'none';
+      overlay.style.opacity = '0';
+      overlay.style.background = 'rgba(0,0,0,0.0)';
+      overlay.style.backdropFilter = 'blur(0px)';
+    }
   }
 
-  // === СОЗДАЁМ КОНТЕНТ ===
+  // === КОНТЕНТ ===
   inspectorModules.forEach(mod => {
     const header = document.createElement('div');
     header.textContent = mod.name;
@@ -112,6 +179,13 @@ export function startInspector(parentContainer) {
         const val = parseFloat(e.target.value);
         valueLabel.textContent = val;
         p.value = val;
+
+        // === Сохранение в localStorage ===
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        stored[p.param] = val;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+
+        // === Применение параметра ===
         if (mod.target?.applyParam) {
           mod.target.applyParam(p.param, p.param === 'headsChance' ? val / 100 : val);
         }
@@ -122,5 +196,6 @@ export function startInspector(parentContainer) {
     }
   });
 
-  console.log('Inspector initialized');
+  panel.appendChild(resetBtn);
+  console.log('Inspector initialized (autosave + reset)');
 }
