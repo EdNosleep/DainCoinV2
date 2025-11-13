@@ -3,25 +3,26 @@
 // ===============================
 
 export const coinInspector = {
-  'Размер монеты (px)':   { min: 80,  max: 300, step: 1,   value: 170, param: 'coinSize' },
-  'Скорость вращения':    { min: 30,  max: 200, step: 1,   value: 75,  param: 'baseSpeed' },
-  'Ширина ребра':         { min: 0.05,max: 0.4, step: 0.01,value: 0.1, param: 'edgeWidth' },
-  'Высота прыжка':        { min: 20,  max: 200, step: 1,   value: 60,  param: 'jumpHeight' },
-  'Шанс аверса (%)':      { min: 0,   max: 100, step: 1,   value: 50,  param: 'headsChance' }
+  'Размер монеты (px)':   { min: 80,  max: 300,  step: 1,    value: 170,   param: 'coinSize' },
+  'Скорость вращения':    { min: 30,  max: 200,  step: 1,    value: 75,    param: 'baseSpeed' },
+  'Высота прыжка':        { min: 20,  max: 200,  step: 1,    value: 60,    param: 'jumpHeight' },
+  'Длительность броска':  { min: 0,   max: 3,    step: 0.1,  value: 0.2,   param: 'spinDuration' },
+  'Скорость в полёте':    { min: 200, max: 2000, step: 10,   value: 1600,  param: 'boostSpeed' },
+  'Шанс аверса (%)':      { min: 0,   max: 100,  step: 1,    value: 50,    param: 'headsChance' }
 };
 
 export function startCoin(parentContainer) {
   // === ПАРАМЕТРЫ ===
   const params = {
     coinSize: coinInspector['Размер монеты (px)'].value,
-    edgeWidth: coinInspector['Ширина ребра'].value,
+    edgeWidth: 0.1,
     baseSpeed: coinInspector['Скорость вращения'].value,
     jumpHeight: coinInspector['Высота прыжка'].value,
     landingDepth: 50,
     jumpDuration: 0.2,
     accelDuration: 0.2,
-    spinDuration: 1.2,
-    boostSpeed: 1600,
+    spinDuration: coinInspector['Длительность броска'].value,
+    boostSpeed: coinInspector['Скорость в полёте'].value,
     slowDuration: 2.4,
     pauseDuration: 0.5,
     headsChance: coinInspector['Шанс аверса (%)'].value / 100
