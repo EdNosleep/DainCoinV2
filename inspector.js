@@ -1,232 +1,126 @@
 // ===============================
-// Dain_Coin — COIN MODULE (v2 with Inspector support)
+// Dain_Coin — UNIVERSAL INSPECTOR MODULE
 // ===============================
 
-export const coinInspector = {
-  'Размер монеты (px)':   { min: 80,  max: 300,  step: 1,    value: 170,   param: 'coinSize' },
-  'Скорость вращения':    { min: 30,  max: 200,  step: 1,    value: 75,    param: 'baseSpeed' },
-  'Высота прыжка':        { min: 20,  max: 200,  step: 1,    value: 60,    param: 'jumpHeight' },
-  'Длительность броска':  { min: 0,   max: 3,    step: 0.1,  value: 0.2,   param: 'spinDuration' },
-  'Скорость в полёте':    { min: 200, max: 2000, step: 10,   value: 1600,  param: 'boostSpeed' },
-  'Шанс аверса (%)':      { min: 0,   max: 100,  step: 1,    value: 50,    param: 'headsChance' }
-};
+import { coinInspector } from './coin.js'; // пример, потом можно добавлять новые
 
-export function startCoin(parentContainer) {
-  // === ПАРАМЕТРЫ ===
-  const params = {
-    coinSize: coinInspector['Размер монеты (px)'].value,
-    edgeWidth: 0.1,
-    baseSpeed: coinInspector['Скорость вращения'].value,
-    jumpHeight: coinInspector['Высота прыжка'].value,
-    landingDepth: 50,
-    jumpDuration: 0.2,
-    accelDuration: 0.2,
-    spinDuration: coinInspector['Длительность броска'].value,
-    boostSpeed: coinInspector['Скорость в полёте'].value,
-    slowDuration: 2.4,
-    pauseDuration: 0.5,
-    headsChance: coinInspector['Шанс аверса (%)'].value / 100
-  };
+export function startInspector(parentContainer) {
+  const inspectorModules = [
+    { name: 'Монетка', source: coinInspector, target: window.__coinModule }
+  ];
 
-  // === СОЗДАЁМ СВОЙ СЛОЙ ===
-  const coinLayer = document.createElement('div');
-  coinLayer.id = 'coin-layer';
-  Object.assign(coinLayer.style, {
+  // === СОЗДАЁМ КНОПКУ ⚙️ ===
+  const button = document.createElement('button');
+  button.innerText = '⚙️';
+  Object.assign(button.style, {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-  });
-  parentContainer.appendChild(coinLayer);
-
-  // === ОБЁРТКА МОНЕТЫ ===
-  const coinWrap = document.createElement('div');
-  coinWrap.id = 'coin-wrap';
-  Object.assign(coinWrap.style, {
-    position: 'relative',
-    width: params.coinSize + 'px',
-    height: params.coinSize + 'px',
+    right: '3vw',
+    bottom: '3vh',
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    border: 'none',
+    fontSize: '24px',
+    background: 'rgba(255,255,255,0.15)',
+    color: '#fff',
+    backdropFilter: 'blur(8px)',
     cursor: 'pointer',
-    willChange: 'transform',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    outline: 'none',
-    pointerEvents: 'auto',
+    zIndex: 50,
+    transition: 'opacity 0.2s ease',
   });
-  coinLayer.appendChild(coinWrap);
+  button.addEventListener('touchstart', e => e.stopPropagation());
+  button.addEventListener('click', togglePanel);
+  parentContainer.appendChild(button);
 
-  // === СЛОИ МОНЕТЫ ===
-  const obvEl = createLayer('./assets/coin_avers.png', 1);
-  const revEl = createLayer('./assets/coin_revers.png', 0);
-  const edgeEl = createLayer('./assets/coin_edge.png', 0);
-  edgeEl.style.transition = 'opacity 0.08s linear';
-  coinWrap.append(obvEl, revEl, edgeEl);
+  // === СОЗДАЁМ ПАНЕЛЬ ===
+  const panel = document.createElement('div');
+  panel.id = 'inspector-panel';
+  Object.assign(panel.style, {
+    position: 'fixed',
+    left: '0',
+    right: '0',
+    bottom: '-60%',
+    height: '60%',
+    background: 'rgba(20,20,20,0.9)',
+    borderTop: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '16px 16px 0 0',
+    boxShadow: '0 -6px 16px rgba(0,0,0,0.5)',
+    backdropFilter: 'blur(10px)',
+    color: 'white',
+    fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+    padding: '16px',
+    overflowY: 'auto',
+    transition: 'bottom 0.35s ease',
+    zIndex: 999,
+  });
+  document.body.appendChild(panel);
 
-  function createLayer(src, opacity) {
-    const img = document.createElement('img');
-    img.src = src;
-    Object.assign(img.style, {
-      position: 'absolute',
-      inset: '0',
-      width: '100%',
-      height: '100%',
-      objectFit: 'contain',
-      pointerEvents: 'none',
-      willChange: 'transform, opacity',
-      backfaceVisibility: 'hidden',
-      transformStyle: 'preserve-3d',
-      opacity: opacity,
-      transformOrigin: 'center',
+  let open = false;
+  function togglePanel() {
+    open = !open;
+    panel.style.bottom = open ? '0' : '-60%';
+  }
+
+  // === СОЗДАЁМ КОНТЕНТ ===
+  inspectorModules.forEach(mod => {
+    const header = document.createElement('div');
+    header.textContent = mod.name;
+    Object.assign(header.style, {
+      fontWeight: 'bold',
+      fontSize: '16px',
+      margin: '8px 0 4px 0',
+      opacity: '0.85',
     });
-    return img;
-  }
+    panel.appendChild(header);
 
-  // === КОНСТАНТЫ ===
-  const radSpeed = Math.PI / 180;
-  const twoPI = Math.PI * 2;
-  const fpsLimit = 60;
-  const frameDuration = 1000 / fpsLimit;
-  let angle = 0, lastTime = performance.now(), lastFrame = 0, spinSpeed = params.baseSpeed;
-  let activeAnim = null;
+    const source = mod.source;
+    for (const label in source) {
+      const p = source[label];
+      const wrap = document.createElement('div');
+      wrap.style.marginBottom = '12px';
 
-  // === ОСНОВНОЙ ЦИКЛ ===
-  function loop(now) {
-    requestAnimationFrame(loop);
-    if (now - lastFrame < frameDuration) return;
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
-    lastFrame = now;
+      const title = document.createElement('div');
+      title.textContent = label;
+      Object.assign(title.style, {
+        fontSize: '13px',
+        marginBottom: '2px',
+        opacity: '0.8',
+      });
 
-    angle = (angle + spinSpeed * radSpeed * dt) % twoPI;
-    const c = Math.cos(angle);
-    const absC = Math.abs(c);
-    const scaleX = Math.max(absC, 0.04);
+      const input = document.createElement('input');
+      Object.assign(input, {
+        type: 'range',
+        min: p.min,
+        max: p.max,
+        step: p.step,
+        value: p.value
+      });
+      Object.assign(input.style, {
+        width: '100%',
+        accentColor: '#00ffff'
+      });
 
-    if (absC < params.edgeWidth) {
-      edgeEl.style.opacity = 1 - absC / params.edgeWidth;
-      obvEl.style.opacity = 0;
-      revEl.style.opacity = 0;
-    } else {
-      edgeEl.style.opacity = 0;
-      if (c >= 0) { obvEl.style.opacity = 1; revEl.style.opacity = 0; }
-      else { obvEl.style.opacity = 0; revEl.style.opacity = 1; }
+      const valueLabel = document.createElement('div');
+      valueLabel.textContent = p.value;
+      Object.assign(valueLabel.style, {
+        fontSize: '12px',
+        textAlign: 'right',
+        opacity: '0.7'
+      });
+
+      input.oninput = e => {
+        const val = parseFloat(e.target.value);
+        valueLabel.textContent = val;
+        p.value = val;
+        if (mod.target?.applyParam) {
+          mod.target.applyParam(p.param, p.param === 'headsChance' ? val / 100 : val);
+        }
+      };
+
+      wrap.append(title, input, valueLabel);
+      panel.appendChild(wrap);
     }
-
-    obvEl.style.transform = `scaleX(${scaleX})`;
-    revEl.style.transform = `scaleX(${scaleX})`;
-    edgeEl.style.transform = `scaleX(0.6)`;
-  }
-  requestAnimationFrame(loop);
-
-  // === КЛИК ===
-  coinWrap.addEventListener('click', () => {
-    if (activeAnim) activeAnim.cancelled = true;
-    startSpinSequence();
   });
 
-  async function startSpinSequence() {
-    const token = { cancelled: false };
-    activeAnim = token;
-    coinWrap.style.transform = 'translateY(0)';
-    spinSpeed = params.baseSpeed;
-
-    const accel = animateOver(params.accelDuration, t => {
-      spinSpeed = lerp(params.baseSpeed, params.boostSpeed, easeOutQuad(t));
-    }, token);
-
-    const jumpUp = animateOver(params.jumpDuration / 2, t => {
-      const y = -params.jumpHeight * Math.sin(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
-    }, token);
-
-    await Promise.all([accel, jumpUp]);
-    await animateOver(params.jumpDuration / 2, t => {
-      const y = -params.jumpHeight * Math.cos(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
-    }, token);
-
-    await animateOver(0.2, t => {
-      const e = Math.sin(t * Math.PI);
-      coinWrap.style.transform = `translateY(${e * 50}px)`;
-    }, token);
-    coinWrap.style.transform = 'translateY(0)';
-
-    await wait(params.spinDuration, token);
-    await animateOver(params.slowDuration, t => {
-      const eased = 1 - easeOutCubic(t);
-      spinSpeed = params.boostSpeed * eased;
-    }, token);
-    spinSpeed = 0;
-
-    const heads = Math.random() < params.headsChance;
-    const target = heads ? 0 : Math.PI;
-    const startAngle = angle % twoPI;
-
-    await animateOver(0.4, t => {
-      angle = lerpAngleRad(startAngle, target, easeOutQuad(t));
-    }, token);
-
-    angle = target;
-    obvEl.style.opacity = heads ? 1 : 0;
-    revEl.style.opacity = heads ? 0 : 1;
-
-    await wait(params.pauseDuration, token);
-    await animateOver(0.5, t => {
-      spinSpeed = params.baseSpeed * t;
-    }, token);
-    spinSpeed = params.baseSpeed;
-  }
-
-  // === УТИЛИТЫ ===
-  const animateOver = (duration, cb, token) => new Promise(resolve => {
-    const start = performance.now();
-    function frame(now) {
-      if (token.cancelled) return resolve();
-      let t = (now - start) / (duration * 1000);
-      if (t > 1) t = 1;
-      cb(t);
-      if (t < 1) requestAnimationFrame(frame);
-      else resolve();
-    }
-    requestAnimationFrame(frame);
-  });
-
-  const wait = (sec, token) => new Promise(resolve => {
-    const end = performance.now() + sec * 1000;
-    function check(now) {
-      if (token.cancelled) return resolve();
-      if (now < end) requestAnimationFrame(check);
-      else resolve();
-    }
-    requestAnimationFrame(check);
-  });
-
-  const easeOutCubic = x => 1 - Math.pow(1 - x, 3);
-  const easeOutQuad = x => 1 - (1 - x) * (1 - x);
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const lerpAngleRad = (a, b, t) => {
-    let d = (b - a + twoPI) % twoPI;
-    if (d > Math.PI) d -= twoPI;
-    return a + d * t;
-  };
-
-  // === API для Inspector ===
-  window.__coinModule = {
-    params,
-    applyParam: (key, value) => {
-      params[key] = value;
-      if (key === 'coinSize') {
-        coinWrap.style.width = value + 'px';
-        coinWrap.style.height = value + 'px';
-      }
-    }
-  };
-
-  console.log('Coin module initialized (centered + inspector-ready)');
+  console.log('Inspector initialized');
 }
