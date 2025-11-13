@@ -141,62 +141,93 @@ export function startCoin(parentContainer) {
     startSpinSequence();
   });
 
-  // === АНИМАЦИЯ БРОСКА ===
-  async function startSpinSequence() {
-    const token = { cancelled: false };
-    activeAnim = token;
-    coinWrap.style.transform = 'translateY(0)';
-    spinSpeed = params.baseSpeed;
+// === АНИМАЦИЯ БРОСКА ===
+async function startSpinSequence() {
+  // 🧹 Полный сброс старого состояния
+  if (activeAnim) activeAnim.cancelled = true;
+  activeAnim = null;
 
-    const accel = animateOver(params.accelDuration, t => {
-      spinSpeed = lerp(params.baseSpeed, params.boostSpeed, easeOutQuad(t));
-    }, token);
+  spinSpeed = params.baseSpeed;
+  angle = 0;
+  obvEl.style.opacity = 1;
+  revEl.style.opacity = 0;
+  edgeEl.style.opacity = 0;
+  coinWrap.style.transform = 'translateY(0)';
 
-    const jumpUp = animateOver(params.jumpDuration / 2, t => {
-      const y = -params.jumpHeight * Math.sin(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
-    }, token);
+  // создаём токен для этой сессии
+  const token = { cancelled: false };
+  activeAnim = token;
 
-    await Promise.all([accel, jumpUp]);
-    await animateOver(params.jumpDuration / 2, t => {
-      const y = -params.jumpHeight * Math.cos(t * Math.PI / 2);
-      coinWrap.style.transform = `translateY(${y}px)`;
-    }, token);
+  // вспомогательная защита
+  const isCancelled = () => token.cancelled || activeAnim !== token;
 
-    await animateOver(0.2, t => {
-      const e = Math.sin(t * Math.PI);
-      coinWrap.style.transform = `translateY(${e * 50}px)`;
-    }, token);
-    coinWrap.style.transform = 'translateY(0)';
+  // === ЭТАП 1. Ускорение + прыжок ===
+  const accel = animateOver(params.accelDuration, t => {
+    spinSpeed = lerp(params.baseSpeed, params.boostSpeed, easeOutQuad(t));
+  }, token);
 
-    await wait(params.spinDuration, token);
-    await animateOver(params.slowDuration, t => {
-      const eased = 1 - easeOutCubic(t);
-      spinSpeed = params.boostSpeed * eased;
-    }, token);
-    spinSpeed = 0;
+  const jumpUp = animateOver(params.jumpDuration / 2, t => {
+    const y = -params.jumpHeight * Math.sin(t * Math.PI / 2);
+    coinWrap.style.transform = `translateY(${y}px)`;
+  }, token);
 
-    const heads = Math.random() < params.headsChance;
-    const target = heads ? 0 : Math.PI;
-    const startAngle = angle % twoPI;
+  await Promise.all([accel, jumpUp]);
+  if (isCancelled()) return;
 
-    await animateOver(0.4, t => {
-      angle = lerpAngleRad(startAngle, target, easeOutQuad(t));
-    }, token);
+  // === ЭТАП 2. Падение ===
+  await animateOver(params.jumpDuration / 2, t => {
+    const y = -params.jumpHeight * Math.cos(t * Math.PI / 2);
+    coinWrap.style.transform = `translateY(${y}px)`;
+  }, token);
+  if (isCancelled()) return;
 
-    angle = target;
-    obvEl.style.opacity = heads ? 1 : 0;
-    revEl.style.opacity = heads ? 0 : 1;
+  // === ЭТАП 3. Лёгкое приземление ===
+  await animateOver(0.2, t => {
+    const e = Math.sin(t * Math.PI);
+    coinWrap.style.transform = `translateY(${e * 50}px)`;
+  }, token);
+  if (isCancelled()) return;
+  coinWrap.style.transform = 'translateY(0)';
 
-    await wait(params.pauseDuration, token);
-    await animateOver(0.5, t => {
-      spinSpeed = params.baseSpeed * t;
-    }, token);
-    spinSpeed = params.baseSpeed;
+  // === ЭТАП 4. Вращение в воздухе ===
+  await wait(params.spinDuration, token);
+  if (isCancelled()) return;
 
-    // 🔚 Сбрасываем флаг активности
-    activeAnim = null;
-  }
+  // === ЭТАП 5. Замедление ===
+  await animateOver(params.slowDuration, t => {
+    const eased = 1 - easeOutCubic(t);
+    spinSpeed = params.boostSpeed * eased;
+  }, token);
+  if (isCancelled()) return;
+  spinSpeed = 0;
+
+  // === ЭТАП 6. Выбор стороны ===
+  const heads = Math.random() < params.headsChance;
+  const target = heads ? 0 : Math.PI;
+  const startAngle = angle % twoPI;
+
+  await animateOver(0.4, t => {
+    angle = lerpAngleRad(startAngle, target, easeOutQuad(t));
+  }, token);
+  if (isCancelled()) return;
+
+  angle = target;
+  obvEl.style.opacity = heads ? 1 : 0;
+  revEl.style.opacity = heads ? 0 : 1;
+
+  // === ЭТАП 7. Пауза + возврат к обычной скорости ===
+  await wait(params.pauseDuration, token);
+  if (isCancelled()) return;
+
+  await animateOver(0.5, t => {
+    spinSpeed = params.baseSpeed * t;
+  }, token);
+  if (isCancelled()) return;
+  spinSpeed = params.baseSpeed;
+
+  // 🔚 Завершаем
+  if (!isCancelled()) activeAnim = null;
+}
 
   // === УТИЛИТЫ ===
   const animateOver = (duration, cb, token) => new Promise(resolve => {
